@@ -1,0 +1,23 @@
+{
+  "topics": [
+    "Arrays & Hashing",
+    "Two Pointers",
+    "Stack & Monotonic Stack",
+    "Binary Search",
+    "Sliding Window",
+    "Linked Lists",
+    "Tries",
+    "Trees",
+    "Heap / Priority Queue",
+    "Backtracking",
+    "Graphs",
+    "1-D Dynamic Programming",
+    "2-D Dynamic Programming",
+    "Intervals",
+    "Advanced Graphs",
+    "Bit Manipulation",
+    "Math and Geometry",
+    "Greedy Algorithms"
+  ],
+  "notes": "This list is the closed set the LLM must classify each problem into. It must not invent new topics. If a problem genuinely doesn't fit any of these, the script should flag it for manual review rather than guessing."
+}

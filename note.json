@@ -1,0 +1,5 @@
+{
+  "problem_name": "Same Binary Tree",
+  "topic": "Trees",
+  "entry_markdown": "- **Same Binary Tree** - Recursively compare p and q node by node. Base case: if both p and q are None, they match at this branch, so return True. If only one is None or their vals differ, the trees diverge here, so return False. Otherwise recurse on the left and right subtrees of both p and q and AND the results together, since both subtrees must match for the whole tree to match."
+}

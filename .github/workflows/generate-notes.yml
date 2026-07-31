@@ -1,0 +1,53 @@
+name: Generate DSA Notes
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "Data Structures & Algorithms/**"
+
+# Prevents overlapping runs if multiple commits land in quick succession --
+# queues them instead, so two runs never write to the Notion page at the
+# same time (avoids the race condition discussed earlier).
+concurrency:
+  group: dsa-notes-agent
+  cancel-in-progress: false
+
+jobs:
+  generate-and-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15  # safety net in case an API call hangs
+
+    steps:
+      - name: Checkout repo (full history for git diff)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2  # need at least the previous commit to diff against
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install anthropic requests
+
+      - name: Run notes pipeline
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NOTION_API_KEY: ${{ secrets.NOTION_API_KEY }}
+          NOTION_PAGE_ID: ${{ secrets.NOTION_PAGE_ID }}
+        run: |
+          python scripts/run_pipeline.py --before ${{ github.event.before }} --after ${{ github.sha }}
+
+      # Optional but recommended: notify on failure so it's never silent.
+      # Requires a SLACK_WEBHOOK_URL secret if you want this active --
+      # remove this step entirely if you'd rather not set that up yet.
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "Pipeline failed on commit ${{ github.sha }}. Check the Actions tab for details."
+          # Example Slack notification (uncomment and add SLACK_WEBHOOK_URL secret to use):
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"DSA Notes Agent failed on commit ${{ github.sha }}"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}
