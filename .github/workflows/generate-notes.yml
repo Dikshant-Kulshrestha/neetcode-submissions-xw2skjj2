@@ -8,7 +8,7 @@ on:
 
 # Prevents overlapping runs if multiple commits land in quick succession --
 # queues them instead, so two runs never write to the Notion page at the
-# same time (avoids the race condition discussed earlier).
+# same time (avoids the race condition).
 concurrency:
   group: dsa-notes-agent
   cancel-in-progress: false
@@ -40,14 +40,3 @@ jobs:
         run: |
           python scripts/run_pipeline.py --before ${{ github.event.before }} --after ${{ github.sha }}
 
-      # Optional but recommended: notify on failure so it's never silent.
-      # Requires a SLACK_WEBHOOK_URL secret if you want this active --
-      # remove this step entirely if you'd rather not set that up yet.
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "Pipeline failed on commit ${{ github.sha }}. Check the Actions tab for details."
-          # Example Slack notification (uncomment and add SLACK_WEBHOOK_URL secret to use):
-          # curl -X POST -H 'Content-type: application/json' \
-          #   --data '{"text":"DSA Notes Agent failed on commit ${{ github.sha }}"}' \
-          #   ${{ secrets.SLACK_WEBHOOK_URL }}
