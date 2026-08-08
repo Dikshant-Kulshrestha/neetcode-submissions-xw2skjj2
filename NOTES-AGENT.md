@@ -1,73 +1,85 @@
 # DSA Notes Agent
 
-Automatically generates personalized study notes from NeetCode solution submissions
-and syncs them to a Notion page, matching your own writing style.
+Automatically generates personalized study notes from NeetCode solution submissions and syncs them to a Notion page, matching the author's existing writing style.
 
-## How it works
+## How It Works
 
-```
+```text
 Solve on NeetCode
       ↓
-NeetCode auto-commits solution to this repo (Data Structures & Algorithms/{problem}/submission-N.py)
+NeetCode auto-commits the solution to this repo
+(Data Structures & Algorithms/{problem}/submission-N.py)
       ↓
-GitHub Actions triggers (paths filtered to that folder only)
+GitHub Actions triggers
+(paths are filtered to the relevant folder)
       ↓
-run_pipeline.py detects which problem folder(s) changed
+run_pipeline.py detects the changed problem folder
       ↓
-generate_notes.py reads all submission files for that problem,
-   classifies the topic, and generates a note entry via Claude API
-   (matching style_guide.md + example_notes.md)
+generate_notes.py reads all submission files for the problem,
+classifies the topic, and generates a note entry via the Claude API
+using style_guide.md and example_notes.md
       ↓
 notion_sync.py checks the Notion page:
    - New problem → inserted under the matching topic heading
-   - Already exists → flagged under "Pending Review" (never auto-overwritten)
-   - Unclassified topic / no matching heading → also flagged under "Pending Review"
+   - Existing problem → added to "Pending Review"
+   - Unclassified topic / missing heading → added to "Pending Review"
 ```
 
-## Repo structure
+## Repository Structure
 
-```
-style_guide.md          # writing style rules fed to the LLM every call
-example_notes.md         # real example notes used as few-shot anchors
-topics.json               # closed list of valid topic headings for classification
+```text
+style_guide.md
+# Writing style rules provided to the LLM on every generation
+
+example_notes.md
+# Existing notes used as few-shot examples and style references
+
+topics.json
+# Closed list of valid topic headings for classification
+
 scripts/
-  generate_notes.py       # reads a problem folder, calls Claude, outputs JSON note
-  notion_sync.py           # takes that JSON, writes it to the Notion page
-  run_pipeline.py           # orchestrator: diffs the push, loops the two scripts above
+  generate_notes.py
+  # Reads a problem folder, calls Claude, and outputs a JSON note
+
+  notion_sync.py
+  # Takes the generated JSON and writes the note to the Notion page
+
+  run_pipeline.py
+  # Orchestrates the pipeline by detecting changed problems
+  # and running the generation and sync stages
+
 .github/workflows/
-  generate-notes.yml        # the GitHub Actions workflow definition
-Data Structures & Algorithms/   # NeetCode's auto-committed solutions (untouched by this pipeline)
+  generate-notes.yml
+  # GitHub Actions workflow definition
+
+Data Structures & Algorithms/
+# NeetCode's auto-committed solutions
+# This directory remains untouched by the pipeline
 ```
 
+## Pending Review
 
-## How "Pending Review" works
+The pipeline never automatically overwrites existing notes.
 
-Nothing is ever auto-overwritten. If the agent generates a note for a problem that:
-- already has an entry somewhere on the page, or
-- classifies into a topic with no matching heading yet, or
-- the model returns `UNCLASSIFIED` (genuinely doesn't fit any topic)
+Generated notes are placed under a **Pending Review** heading when:
 
-...it gets appended under a **"Pending Review"** heading (auto-created on first use) with a
-tag explaining why, instead of touching existing content. Check this section periodically and
-manually merge/move entries into the right place.
+* The problem already has an entry somewhere on the Notion page.
+* The classified topic does not have a corresponding heading.
+* The model returns `UNCLASSIFIED` because the problem does not clearly fit an existing topic.
 
-## Multi-approach problems
+Each pending entry includes a tag identifying the reason for review. The section is automatically created when the first pending entry is generated.
 
-If a problem folder contains multiple `submission-N.py` files, the agent reads all of them
-together and decides whether they represent genuinely different algorithmic approaches or
-just bugfix iterations of the same one:
-- **Different approaches** → one entry with numbered sub-methods (matching the style of
-  entries like "Maximum Depth of Binary Tree" in the example notes)
-- **Same approach, iterated** → one normal single entry
+This provides a safeguard against accidental overwrites while allowing ambiguous or duplicate entries to be handled separately from the main notes.
 
-**Known limitation:** numbered sub-methods currently render as plain text within a single
-Notion bullet, not as true nested numbered blocks. Cosmetic issue, not a data-loss issue —
-revisit if it bothers you enough to fix the Notion block nesting logic.
+## Multi-Approach Problems
 
-## Maintaining note quality over time
+When a problem folder contains multiple `submission-N.py` files, all submissions are analyzed together to distinguish between genuinely different algorithmic approaches and iterative bug-fix submissions.
 
-The model's output is only as good as `example_notes.md`. If you notice generated notes
-drifting toward generic phrasing over time, refresh that file with newer real notes you've
-personally written or approved, and re-test against a couple of problems to confirm quality
-is back on track.
+* **Different approaches** → A single note entry containing numbered sub-methods, consistent with entries such as "Maximum Depth of Binary Tree" in `example_notes.md`.
+* **Same approach, iterated** → A single standard note entry representing the final approach.
 
+Numbered sub-methods currently render as plain text within a single Notion bullet rather than as true nested numbered blocks. This is a cosmetic limitation and does not affect note content or data integrity.
+
+## Maintaining Note Quality
+
+The quality and consistency of generated notes depend heavily on `example_notes.md`. As the personal writing style evolves, newer notes that accurately represent the preferred style can be incorporated into the file. Periodic testing against recently solved problems provides a way to verify that generated notes continue to reflect the intended level of detail, structure, and phrasing.
