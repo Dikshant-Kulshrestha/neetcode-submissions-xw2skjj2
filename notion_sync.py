@@ -1,23 +1,15 @@
 #!/usr/bin/env python3
 """
-notion_sync.py
-
-Takes the JSON output of generate_notes.py and syncs it to the Notion page:
+This file takes the JSON output of generate_notes.py and syncs it to the Notion page:
 - If the problem is new (no existing entry found under any heading), appends
   the entry as a bullet under the matching topic heading.
 - If the problem already has an entry anywhere on the page, it is NEVER
-  overwritten or merged automatically -- it's appended instead to a
+  overwritten or merged automatically, it's appended instead to a
   dedicated "Pending Review" section at the top of the page, with a note
-  pointing back to the existing entry, for the user to manually reconcile.
+  pointing back to the existing entry, for manual consideration.
 
-USAGE:
-    export NOTION_API_KEY=secret_...
-    export NOTION_PAGE_ID=...
-    python notion_sync.py --input note.json
 
-Where note.json is the output of generate_notes.py, e.g.:
-    python generate_notes.py --problem-dir "..." --out note.json
-    python notion_sync.py --input note.json
+note.json is the output of generate_notes.py
 """
 
 import argparse
@@ -102,20 +94,14 @@ def find_existing_entry(blocks: list[dict], problem_name: str) -> dict | None:
     for block in blocks:
         if block.get("type") == "bulleted_list_item":
             text = block_plain_text(block).lower()
-            # entries start with "**problem name** -" -> plain text strips
-            # the bold markers, so just check if it starts with the name
+          
             if text.startswith(problem_lower):
                 return block
-        # NOTE: nested/child entries under bulleted items with multiple
-        # methods aren't recursed into here for simplicity -- top-level
-        # bullets cover the documented entry format.
     return None
 
 
 def markdown_bullet_to_notion_block(entry_markdown: str) -> dict:
-    """Convert a single-level markdown bullet (with **bold** problem name)
-    into a Notion bulleted_list_item block. Does not handle nested numbered
-    sub-lists yet -- see TODO below."""
+    #Convert a single-level markdown bullet into a Notion bulleted_list_item block.
     text = entry_markdown.lstrip("- ").strip()
 
     # Split on the bold problem name to build rich_text with bold formatting
@@ -134,12 +120,12 @@ def markdown_bullet_to_notion_block(entry_markdown: str) -> dict:
         "type": "bulleted_list_item",
         "bulleted_list_item": {"rich_text": rich_text},
     }
-    # TODO (Phase 5 polish): entries with numbered sub-methods (multi-approach
+    # TODO (polish): entries with numbered sub-methods (multi-approach
     # problems) contain literal "\n    1. ..." in entry_markdown -- these
     # currently get flattened into one bullet's text rather than true nested
-    # numbered_list_item child blocks. Revisit once basic sync is confirmed
+    # numbered_list_item child blocks. Revisit once basic sync is
     # working, since Notion's nested block API needs a second append call
-    # with the parent bullet's ID as target.
+    # with the parent bullet's ID as target.         
 
 
 def find_section_end_block_id(blocks: list[dict], heading_id: str) -> str:
@@ -194,8 +180,7 @@ def ensure_pending_review_section(page_id: str, blocks: list[dict], headers: dic
     # Not found -- create it. NOTE: Notion API appends to the END of children,
     # not the top. For a true "top of page" placement, this block should be
     # manually moved once, or the page pre-seeded with this heading ahead of
-    # time. Flagging this as a known limitation rather than silently placing
-    # it at the bottom without saying so.
+    # time.
     heading_block = {
         "object": "block",
         "type": "heading_2",
