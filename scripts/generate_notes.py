@@ -1,20 +1,14 @@
 #!/usr/bin/env python3
 """
-generate_notes.py
-
 Reads all submission files for a single problem folder, classifies the topic,
 and generates a styled note entry (matching the user's personal writing style)
 via the Claude API.
 
 Designed to be provider-agnostic: the actual API call is isolated in
-`call_llm()` so swapping to Gemini/Groq later only requires editing that
+`call_llm()` so swapping to other AI model later only requires editing that
 one function.
 
-USAGE (local testing, before wiring into GitHub Actions):
-    export ANTHROPIC_API_KEY=sk-ant-...
-    python generate_notes.py --problem-dir "Data Structures & Algorithms/car-fleet"
-
-Outputs a JSON object to stdout:
+Outputs a JSON object to stdout like:
     {
       "problem_name": "Car Fleet",
       "topic": "Stack & Monotonic Stack",
@@ -28,10 +22,6 @@ import os
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# Config / paths (adjust if repo layout changes)
-# ---------------------------------------------------------------------------
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 STYLE_GUIDE_PATH = REPO_ROOT / "style_guide.md"
 EXAMPLE_NOTES_PATH = REPO_ROOT / "example_notes.md"
@@ -40,10 +30,7 @@ TOPICS_PATH = REPO_ROOT / "topics.json"
 MODEL = "claude-sonnet-5"
 MAX_TOKENS = 1000
 
-
-# ---------------------------------------------------------------------------
 # Helpers
-# ---------------------------------------------------------------------------
 
 def slug_to_title(slug: str) -> str:
     """'car-fleet' -> 'Car Fleet'"""
@@ -116,7 +103,6 @@ Generate the note entry now, following the style guide and reference examples ex
 
 
 def call_llm(system_prompt: str, user_prompt: str) -> str:
-    """Isolated API call -- swap this function to change providers."""
     try:
         import anthropic
     except ImportError:
@@ -150,9 +136,7 @@ def parse_llm_json(raw: str) -> dict:
         sys.exit(f"Failed to parse LLM output as JSON: {e}\n\nRaw output:\n{raw}")
 
 
-# ---------------------------------------------------------------------------
 # Main
-# ---------------------------------------------------------------------------
 
 def main():
     parser = argparse.ArgumentParser(description="Generate a styled DSA note for one problem folder.")
