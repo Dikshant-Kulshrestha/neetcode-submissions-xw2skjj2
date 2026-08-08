@@ -1,17 +1,12 @@
-#!/usr/bin/env python3
 """
-run_pipeline.py
-
 The orchestrator GitHub Actions actually calls. Given a git commit range,
 finds every problem folder that changed, and runs generate_notes.py +
 notion_sync.py for each one, sequentially (to respect API rate limits and
 avoid concurrent writes to the same Notion page).
 
-USAGE (what the GitHub Actions workflow calls):
-    python scripts/run_pipeline.py --before <sha> --after <sha>
 
 Falls back to comparing against the previous commit if --before/--after
-aren't given (useful for local testing of "what changed in my last commit").
+aren't given (useful for local testing)
 """
 
 import argparse
@@ -39,8 +34,7 @@ def get_changed_files(before: str, after: str) -> list[str]:
 def extract_problem_dirs(changed_files: list[str]) -> list[Path]:
     """From changed file paths, extract unique problem folders under the
     solutions directory. Ignores files outside it (README edits, workflow
-    changes, etc.) entirely -- this is the cost-control filter discussed
-    earlier so we never call the API on irrelevant commits."""
+    changes, etc.) entirely, this is the cost-control filter so we never call the API on irrelevant commits."""
     problem_dirs = set()
     for f in changed_files:
         path = Path(f)
